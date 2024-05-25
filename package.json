@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "colyseus.js": "^0.15.15-preview.9"
+  }
+}
