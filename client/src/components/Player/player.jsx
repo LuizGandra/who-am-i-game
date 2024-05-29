@@ -1,12 +1,25 @@
-import './style.css';
+import { Heart } from "lucide-react";
 
-function Player({avatarUri, name, talking}) {
+function Player({avatarUri, name, talking, hp = 3}) {
+	const getPlayerhp = () => {
+		let hearts = [];
+
+		for(let i = 0; i < hp; i++) {
+			hearts.push(<div className="mb-2" key={`${name}-hp-${i + 1}`}><Heart size={18} color="#dc2626" fill="#dc2626" /></div>);
+		}
+
+		return hearts;
+	}
+
 	return (
-		<div className="player__container">
-      <div className={`player__avatar ${talking ? 'player__avatar__talking' : ''}`}>
-        <img className="player__avatar__img" src={avatarUri} width="100%" height="100%" />
-      </div>
-      <div>{name}</div>
+		<div className="w-full flex flex-col justify-center items-center">
+			<div className="mb-0.5 flex gap-1">
+				{getPlayerhp()}
+			</div>
+			<img className={`w-fit max-h-20 mb-2 rounded-full shadow-sm shadow-black ${talking ? 'ring-4 ring-emerald-500 transition-all ' : ''}`} src={avatarUri} width="100%" height="100%" />
+      <div className="w-28 -mt-7 bg-black px-4 py-1 rounded-full  text-white text-sm text-center">
+				{name}
+			</div>
     </div>
 	);
 }

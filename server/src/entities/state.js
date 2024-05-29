@@ -9,19 +9,19 @@ export class State extends schema.Schema {
     this.channelId = attributes.channelId;
   }
 
-	_getPlayer = (sessionId) => {
+	getPlayer = (sessionId) => {
 		return Array.from(this.players.values()).find(p => p.sessionId === sessionId);
 	};
 
 	createPlayer = (sessionId, playerOptions) => {
-		const existingPlayer = this._getPlayer(sessionId);
+		const existingPlayer = this.getPlayer(sessionId);
 		if (!existingPlayer) {
 			this.players.set(playerOptions.userId, new Player({...playerOptions, sessionId}));
 		}
 	}
 
 	removePlayer = (sessionId) => {
-		const player = this._getPlayer(sessionId);
+		const player = this.getPlayer(sessionId);
 
 		if (player) {
 			this.players.delete(player.userId);
@@ -29,7 +29,7 @@ export class State extends schema.Schema {
 	}
 
 	startTalking = (sessionId) => {
-		const player = this._getPlayer(sessionId);
+		const player = this.getPlayer(sessionId);
 
 		if (player != null) {
 			player.talking = true;
@@ -37,9 +37,16 @@ export class State extends schema.Schema {
 	}
 
 	stopTalking = (sessionId) => {
-		const player = this._getPlayer(sessionId);
+		const player = this.getPlayer(sessionId);
 		if (player != null) {
 			player.talking = false;
+		}
+	}
+
+	removeHealth = (sessionId) => {
+		const player = this.getPlayer(sessionId);
+		if (player != null) {
+			player.hp = player.hp - 1;
 		}
 	}
 }

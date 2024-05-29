@@ -8,6 +8,7 @@ export class Player extends schema.Schema {
     this.avatarUri = avatarUri;
     this.name = name;
     this.talking = false;
+		this.hp = 3;
   }
 }
 
@@ -16,5 +17,6 @@ schema.defineTypes(Player, {
 	userId: 'string',
 	avatarUri: 'string',
 	name: 'string',
-	talking: 'boolean'
+	talking: 'boolean',
+	hp: 'number'
 });

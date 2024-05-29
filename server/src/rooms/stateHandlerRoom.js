@@ -4,7 +4,7 @@ import { State } from '../entities/state.js';
 const { Room } = colyseus;
 
 export class StateHandlerRoom extends Room {
-	maxClients = 4;
+	maxClients = 10;
 
 	onCreate(options) {
 		this.setState(new State(options));
@@ -16,6 +16,10 @@ export class StateHandlerRoom extends Room {
 
 		this.onMessage('stopTalking', (client, _data) => {
 			this.state.stopTalking(client.sessionId);
+		});
+
+		this.onMessage('removeHealth', (client, _data) => {
+			this.state.removeHealth(client.sessionId);
 		});
 	}
 
