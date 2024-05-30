@@ -46,7 +46,13 @@ export class State extends schema.Schema {
 	removeHealth = (sessionId) => {
 		const player = this.getPlayer(sessionId);
 		if (player != null) {
-			player.hp = player.hp - 1;
+			for(const value of player.health.values()) {
+				if (value) {
+					player.health.pop();
+					player.health.unshift(false);
+					break;
+				}
+			}
 		}
 	}
 }

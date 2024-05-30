@@ -33,6 +33,7 @@ const usePlayersContextSetup = () => {
 						if (p.userId !== player.userId) return p;
 
 						p[field] = value;
+						
 						return p;
 					}));
 				}
@@ -43,6 +44,7 @@ const usePlayersContextSetup = () => {
         player.listen('sessionId', (value) => handlePropertyChange('sessionId', value));
         player.listen('talking', (value) => handlePropertyChange('talking', value));
         player.listen('userId', (value) => handlePropertyChange('userId', value));
+				player.listen('health', (value) => handlePropertyChange('health', value));
 			});
 
 			authenticatedContext.room.state.players.onRemove((player) => {

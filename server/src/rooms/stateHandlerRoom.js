@@ -10,16 +10,16 @@ export class StateHandlerRoom extends Room {
 		this.setState(new State(options));
 
 		// handlers for update the states
-		this.onMessage('startTalking', (client, _data) => {
+		this.onMessage('removeHealth', (client) => {
+			this.state.removeHealth(client.sessionId);
+		});
+
+		this.onMessage('startTalking', (client) => {
 			this.state.startTalking(client.sessionId);
 		});
 
-		this.onMessage('stopTalking', (client, _data) => {
+		this.onMessage('stopTalking', (client) => {
 			this.state.stopTalking(client.sessionId);
-		});
-
-		this.onMessage('removeHealth', (client, _data) => {
-			this.state.removeHealth(client.sessionId);
 		});
 	}
 
