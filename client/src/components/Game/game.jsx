@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import Player from '../Player/player';
+import TimerSpinner from '../TimerSpinner/timerSpinner';
 import { usePlayers } from '../../hooks/usePlayers';
 import { useAuthenticatedContext } from '../../hooks/useAuthenticatedContext';
 import { Input } from "./../ui/input"
 import { Button } from "./../ui/button"
 import { ScrollArea } from "./../ui/scroll-area"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./../ui/dialog"
 import {
   Carousel,
   CarouselContent,
@@ -12,7 +20,9 @@ import {
 } from "./../ui/carousel"
 import { ArrowBigLeft, ArrowBigRight, Contact } from 'lucide-react';
 import getPlayerHealth from './../../utils/getPlayerHealth';
+import checkHealth from './../../utils/checkHealth';
 import checkGuess from './../../utils/checkGuess';
+import getUserDisplayName from '../../utils/getUserDisplayName';
 
 function Game() {
 	const players = usePlayers();
@@ -21,14 +31,28 @@ function Game() {
 	const room = authenticatedContext.room;
 	const [player, setPlayer] = useState({});
 	const [currentPlayer, setCurrentPlayer] = useState({});
-	const [queue, setQueue] = useState([]);
+	const [queue, setQueue] = useState({ players: [], waiting: []});
 	const [healthEl, setHealthEl] = useState([]);
 
+	const [showModal, setShowModal] = useState(false);
+	
 	useEffect(() => {
-		setPlayer(players.filter(p => authenticatedContext.guildMember.nick === p.name)[0]);
-		setQueue(players.filter(p => authenticatedContext.guildMember.nick !== p.name));
-		// TODO: current player and queue
-		setCurrentPlayer(players.filter(p => authenticatedContext.guildMember.nick === p.name)[0]);
+		const guildMember = authenticatedContext.guildMember;
+		const name = getUserDisplayName({
+			guildMember,
+			user: authenticatedContext.user
+		});
+
+		setPlayer(players.filter(p => name === p.name)[0]);
+		setCurrentPlayer(players.filter(p => name === p.name)[0]);
+		setQueue(queue => {
+				const newQueue = queue;
+				newQueue.players = players.filter(p => name !== p.name && checkHealth(p.health));
+				newQueue.players = players.filter(p => name !== p.name && !checkHealth(p.health));
+
+				return newQueue;
+			}
+		);
 
 		if (player) {
 			setHealthEl(getPlayerHealth(player.name, player.health));
@@ -48,12 +72,26 @@ function Game() {
 
 						return getPlayerHealth(player.name, newHealth);
 					});
-
-					console.log('só p ve né meu fi:', Array.from(player.health));
 					break;
 				}
 			}
+
+			if (!checkHealth(player?.health)) setShowModal(true);
 		}
+	}
+
+	const handleQueue = () => {
+		setQueue(queue => {
+			const newQueue = queue;
+
+			console.log('Queue start:', queue);
+			setCurrentPlayer(newQueue.players.shift());
+			newQueue.players.push(currentPlayer);
+
+			console.log('Queue changed:', queue);
+
+			return newQueue;
+		});
 	}
 
 	return (
@@ -62,12 +100,12 @@ function Game() {
 				<section className="h-screen grid grid-rows-[65%_35%]">
 					<div className="px-12 pt-8 pb-4 flex justify-between items-start">
 						<div className="flex flex-col gap-2 items-center">
-							<label className="text-sm uppercase text-zinc-300 font-bold">Round</label>
+							<label className="text-sm uppercase text-zinc-600 font-bold">Round</label>
 							<span className="text-3xl">1/20</span>
 						</div>
 						<div className="self-center flex flex-col gap-4 items-center">
-							<span className="text-2xl">{currentPlayer?.name}</span>
-							<img className="w-44 h-44 rounded-full" src={currentPlayer?.avatarUri} alt={`${currentPlayer?.name}'s Avatar`} />
+							<span className="text-2xl">{currentPlayer?.name ? currentPlayer?.name : 'Waiting...'}</span>
+							<img className={`w-44 h-44 rounded-full ${player?.talking ? 'ring-4 ring-emerald-500 transition-all' : ''}`} src={currentPlayer?.avatarUri} alt={`${currentPlayer?.name}'s Avatar`} draggable="false" />
 							<div className="h-16 -mt-16 flex">
 								<Input placeholder="Am I..." className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" />
 								<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl">
@@ -76,8 +114,7 @@ function Game() {
 							</div>
 						</div>
 						<div className="flex flex-col gap-2 items-center">
-							<div className="w-24 h-24 bg-zinc-950 rounded-full"></div>
-							<span className="text-sm uppercase text-zinc-300 font-bold">20 seconds</span>
+							<TimerSpinner time={60000} handleQueue={handleQueue} />
 						</div>
 					</div>
 					<div className="w-full h-full px-8 relative">
@@ -91,7 +128,7 @@ function Game() {
 								className="w-full min-h-full border-t-2 border-t-zinc-800 flex flex-col justify-center"
 							>
 								<CarouselContent>
-									{queue.map(p => <CarouselItem className="basis-1/10" key={p.userId}><Player  {...p} /></CarouselItem>)}
+									{queue.map(p => <CarouselItem className="basis-1/10" key={p.userId}><Player {...p} /></CarouselItem>)}
 								</CarouselContent>
 							</Carousel>
 						) : (
@@ -138,6 +175,16 @@ function Game() {
 					</div>
 				</aside>
 			</div>
+			<Dialog open={showModal} onOpenChange={setShowModal}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Não foi dessa vez!</DialogTitle>
+						<DialogDescription>
+							Continue assistindo seus amigos se divertindo enquanto espera a sua vez.
+						</DialogDescription>
+					</DialogHeader>
+				</DialogContent>
+			</Dialog>
 		</main>
 	);
 }
