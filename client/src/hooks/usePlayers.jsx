@@ -27,11 +27,11 @@ const usePlayersContextSetup = () => {
 		try {
 			authenticatedContext.room.state.players.onAdd((player) => {
 				setPlayers(players => [...players.filter(p => p.userId !== player.userId), player]);
-
+				
 				const handlePropertyChange = (field, value) => {
 					setPlayers(players => players.map(p => {
 						if (p.userId !== player.userId) return p;
-
+						
 						p[field] = value;
 						
 						return p;
