@@ -9,7 +9,7 @@ export class State extends schema.Schema {
 		this.currentPlayer = new Player("", "", "", "");
 		this.queue = new Queue({ players: [], queue: [] });
 		this.round = 1;
-		this.timer = 10000;
+		this.timer = 60;
     this.roomName = attributes.roomName;
     this.channelId = attributes.channelId;
   }
@@ -144,7 +144,9 @@ export class State extends schema.Schema {
 				this.queue.players.set(this.currentPlayer.userId, this.currentPlayer);
 				this.currentPlayer = currentPlayer;
 				
-				this.queue.players.delete(player.userId);
+				this.queue.players.delete(currentPlayer.userId);
+
+				console.log('currentplayer is:', currentPlayer);
 			}
 		}
 	}

@@ -5,7 +5,7 @@ const { Room, Delayed } = colyseus;
 
 export class StateHandlerRoom extends Room {
 	maxClients = 10;
-	roundInterval = Delayed;
+	roundInterval;
 
 	onCreate(options) {
 		this.setState(new State(options));
@@ -13,13 +13,12 @@ export class StateHandlerRoom extends Room {
 		// TODO: create onStart method
 		// round timer
 		this.clock.start();
-		console.log('time:', this.clock.currentTime);
-
+		
 		this.roundInterval = this.clock.setInterval(() => {
+    	console.log(`O intervalo durou ${this.roundInterval.elapsedTime} milissegundos.`);
+			
 			this.state.updateCurrentPlayer();
-			this.broadcast('updateCurrentPlayer');
-			this.roundInterval.reset();
-		}, this.state.timer)
+		}, this.state.timer * 1000);
 
 		// player's handlers
 		this.onMessage('removeHealth', (client) => {
@@ -37,17 +36,14 @@ export class StateHandlerRoom extends Room {
 		// queue's handlers
 		this.onMessage('enqueue', (client) => {
 			this.state.enqueue(client.sessionId);
-			this.broadcast('enqueue');
 		});
 
 		this.onMessage('moveToLobby', (client) => {
 			this.state.moveToLobby(client.sessionId);
-			this.broadcast('moveToLobby');
 		});
 
 		this.onMessage('updateCurrentPlayer', () => {
 			this.state.updateCurrentPlayer();
-			this.broadcast('updateCurrentPlayer');
 		});
 	}
 
@@ -66,7 +62,6 @@ export class StateHandlerRoom extends Room {
 
 	// close room
 	onDispose() {
-		this.clock.clear();
 		console.log('Dispose StateHandlerRoom');
 	}
 }

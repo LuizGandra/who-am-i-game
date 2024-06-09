@@ -15,8 +15,7 @@ import getUserDisplayName from '../../utils/getUserDisplayName';
 
 function Game() {
 	// TODO:
-	// ! 1. A queue deve ser mantida pelo servidor;
-	// ! 2. O timer deve ser mantido pelo servidor;
+	// ! 1. Fix currentPlayer talk
 
 	const authenticatedContext = useAuthenticatedContext();
 	const room = authenticatedContext.room;
@@ -29,31 +28,36 @@ function Game() {
 
 	const players = usePlayers();
 	const player = players.filter(p => name === p.name)[0];
-
 	let queue = room.state.queue;
-	let currentPlayer = room.state.currentPlayer;
+
+	const [currentPlayer, setCurrentPlayer] = useState(room.state.currentPlayer);
 
 	const [healthEl, setHealthEl] = useState([]);
 	const [showModal, setShowModal] = useState(false);
 
 	useEffect(() => {
 		if (player) {
-			// TODO: not working
-			room.onMessage('updateCurrentPlayer', () => {
-				currentPlayer = room.state.currentPlayer;
-				queue = room.state.queue;
-
-				console.log('TESTING CURRENT:', currentPlayer);
-				console.log('TESTING QUEUE:', queue);
+			room.state.listen('currentPlayer', (data) => {
+				setCurrentPlayer(data);
 			});
 		}
-	}, [players, player, room]);
+	});
 
 	useEffect(() => {
 		if (player) {
 			setHealthEl(getPlayerHealth(player.name, player.health));
 		}
 	}, [player]);
+
+	const getCurrentPlayer = () => {
+		const playerFound = players.find(p => p.sessionId === currentPlayer.sessionId);
+
+		if (playerFound) {
+			return playerFound;
+		} else {
+			return {};
+		}
+	}
 	
 	const tryGuess = (guess) => {
 		if (!checkGuess(player?.name, guess)) {
@@ -91,7 +95,7 @@ function Game() {
 							<span className="text-3xl">1/20</span>
 						</div>
 						<div className="self-center flex flex-col gap-4 items-center">
-							<CurrentPlayer player={currentPlayer} />
+							<CurrentPlayer {...getCurrentPlayer()} />
 							<div className="h-16 -mt-16 flex">
 								<Input placeholder="Am I..." className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" />
 								<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl">
