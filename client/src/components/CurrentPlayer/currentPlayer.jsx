@@ -1,5 +1,4 @@
 function CurrentPlayer({ name, talking, avatarUri }) {
-	console.log('talking funciona?', talking);
 	return (
 		<>
 			<span className="text-2xl">{name ? name : 'Waiting...'}</span>

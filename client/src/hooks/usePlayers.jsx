@@ -49,10 +49,10 @@ const usePlayersContextSetup = () => {
 
 			authenticatedContext.room.state.players.onRemove((player) => {
 				setPlayers(players => [...players.filter(p => p.userId !== player.userId)]);
-			})
-
+			});
+				
 			authenticatedContext.room.onLeave((code) => {
-        console.log("You've been disconnected.", code);
+				console.log("You've been disconnected.", code);
       });
 		} catch (error) {
 			console.error("Connection error:", error);

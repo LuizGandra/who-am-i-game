@@ -16,6 +16,7 @@ import getUserDisplayName from '../../utils/getUserDisplayName';
 function Game() {
 	// TODO:
 	// ! 1. Fix currentPlayer talk
+	// ! 2. Show timer in frontend
 
 	const authenticatedContext = useAuthenticatedContext();
 	const room = authenticatedContext.room;
@@ -35,10 +36,20 @@ function Game() {
 	const [healthEl, setHealthEl] = useState([]);
 	const [showModal, setShowModal] = useState(false);
 
+	const round = room.state.round;
+	const lastRound = room.state.lastRound;
+	const roundTimer = room.state.roundTimer;
+
+	const [timeLeft, setTimeLeft] = useState(roundTimer);
+
 	useEffect(() => {
 		if (player) {
 			room.state.listen('currentPlayer', (data) => {
 				setCurrentPlayer(data);
+			});
+
+			room.state.listen('roundTimer', (data) => {
+				setTimeLeft(() => data);
 			});
 		}
 	});
@@ -48,16 +59,6 @@ function Game() {
 			setHealthEl(getPlayerHealth(player.name, player.health));
 		}
 	}, [player]);
-
-	const getCurrentPlayer = () => {
-		const playerFound = players.find(p => p.sessionId === currentPlayer.sessionId);
-
-		if (playerFound) {
-			return playerFound;
-		} else {
-			return {};
-		}
-	}
 	
 	const tryGuess = (guess) => {
 		if (!checkGuess(player?.name, guess)) {
@@ -92,10 +93,10 @@ function Game() {
 					<div className="px-12 pt-8 pb-4 flex justify-between items-start">
 						<div className="w-24 flex flex-col gap-2 items-center">
 							<label className="text-sm uppercase text-zinc-600 font-bold">Round</label>
-							<span className="text-3xl">1/20</span>
+							<span className="text-3xl">{round} / {lastRound}</span>
 						</div>
 						<div className="self-center flex flex-col gap-4 items-center">
-							<CurrentPlayer {...getCurrentPlayer()} />
+							<CurrentPlayer {...currentPlayer} />
 							<div className="h-16 -mt-16 flex">
 								<Input placeholder="Am I..." className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" />
 								<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl">
@@ -104,7 +105,8 @@ function Game() {
 							</div>
 						</div>
 						<div className="flex flex-col gap-2 items-center">
-							{/* {} */}
+							<label className="text-sm uppercase text-zinc-600 font-bold">Timer</label>
+							<span className="text-3xl">{timeLeft}</span>
 						</div>
 					</div>
 					<Queue queue={queue} />

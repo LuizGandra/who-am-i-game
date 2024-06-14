@@ -9,7 +9,9 @@ export class State extends schema.Schema {
 		this.currentPlayer = new Player("", "", "", "");
 		this.queue = new Queue({ players: [], queue: [] });
 		this.round = 1;
-		this.timer = 60;
+		this.lastRound = 20;
+		this.roundDuration = 60;
+		this.roundTimer = this.roundDuration;
     this.roomName = attributes.roomName;
     this.channelId = attributes.channelId;
   }
@@ -70,6 +72,10 @@ export class State extends schema.Schema {
 		const player = this.getPlayer(sessionId);
 
 		if (player) {
+			if (this.findInQueue(sessionId)) {
+				this.checkHealth(sessionId) ? this.queue.players.delete(player.userId) : this.queue.lobby.delete(player.userId);
+			}
+
 			this.players.delete(player.userId);
 		}
 	}
@@ -145,9 +151,19 @@ export class State extends schema.Schema {
 				this.currentPlayer = currentPlayer;
 				
 				this.queue.players.delete(currentPlayer.userId);
-
-				console.log('currentplayer is:', currentPlayer);
+				
+				if (this.round < this.lastRound) {
+					this.round++;
+				}
 			}
+		}
+	}
+
+	updateTimer = () => {
+		if (this.roundTimer === 0) {
+			this.roundTimer = this.roundDuration;
+		} else {
+			this.roundTimer--;
 		}
 	}
 }
@@ -157,7 +173,9 @@ schema.defineTypes(State, {
 	currentPlayer: Player,
 	queue: Queue,
 	round: 'number',
-	timer: 'number',
+	lastRound: 'number',
+	roundTimer: 'number',
+	roundDuration: 'number',
 	roomName: 'string',
 	channelId: 'string'
 });
