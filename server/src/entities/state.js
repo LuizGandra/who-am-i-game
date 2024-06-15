@@ -1,6 +1,7 @@
 import * as schema from "@colyseus/schema";
 import { Player } from './player.js';
 import { Queue } from './queue.js';
+import { Clue } from './clue.js';
 
 export class State extends schema.Schema {
 	constructor(attributes) {
@@ -10,8 +11,9 @@ export class State extends schema.Schema {
 		this.queue = new Queue({ players: [], queue: [] });
 		this.round = 1;
 		this.lastRound = 20;
-		this.roundDuration = 60;
+		this.roundDuration = 10;
 		this.roundTimer = this.roundDuration;
+		this.showVote = false;
     this.roomName = attributes.roomName;
     this.channelId = attributes.channelId;
   }
@@ -166,6 +168,23 @@ export class State extends schema.Schema {
 			this.roundTimer--;
 		}
 	}
+
+	// clues and guesses
+	addClue = (sessionId, clue) => {
+		const player = this.getPlayer(sessionId);
+
+		if (player) {
+			player.clues.push(new Clue(clue));
+		}
+	}
+
+	updateShowVote = (sessionId) => {
+		const player = this.getPlayer(sessionId);
+
+		if (player) {
+			this.showVote = !this.showVote;
+		}
+	}
 }
 
 schema.defineTypes(State, {
@@ -176,6 +195,7 @@ schema.defineTypes(State, {
 	lastRound: 'number',
 	roundTimer: 'number',
 	roundDuration: 'number',
+	showVote: 'boolean',
 	roomName: 'string',
 	channelId: 'string'
 });

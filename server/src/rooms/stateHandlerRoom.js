@@ -5,7 +5,6 @@ const { Room, Delayed } = colyseus;
 
 export class StateHandlerRoom extends Room {
 	maxClients = 10;
-	roundInterval;
 	roundTimerInterval;
 
 	onCreate(options) {
@@ -14,14 +13,14 @@ export class StateHandlerRoom extends Room {
 		// TODO: create onStart method
 		// round timer
 		this.clock.start();
-		
-		this.roundInterval = this.clock.setInterval(() => {
-			this.state.updateCurrentPlayer();
-		}, this.state.roundDuration * 1000);
 
+		// TODO improve this interval for zero delay
 		this.roundTimerInterval = this.clock.setInterval(() => {
+			if (this.state.roundTimer === 0) this.state.updateCurrentPlayer();
+				
 			this.state.updateTimer();
-		}, 1000)
+		}, 1000);
+
 
 		// player's handlers
 		this.onMessage('removeHealth', (client) => {
@@ -51,6 +50,15 @@ export class StateHandlerRoom extends Room {
 
 		this.onMessage('updateTimer', () => {
 			this.state.updateTimer();
+		});
+
+		// clues and guesses handlers
+		this.onMessage('addClue', (client, clue) => {
+			this.state.addClue(client.sessionId, clue);
+		});
+
+		this.onMessage('updateShowVote', (client) => {
+			this.state.updateShowVote(client.sessionId);
 		});
 	}
 

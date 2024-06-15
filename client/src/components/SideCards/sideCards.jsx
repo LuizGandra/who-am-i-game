@@ -1,8 +1,19 @@
 import { ScrollArea } from "../ui/scroll-area"
 import { Button } from "../ui/button"
 import { ArrowBigLeft, ArrowBigRight, Contact } from 'lucide-react';
+import { useEffect, useState } from "react";
 
-function SideCards({ healthEl, tryGuess }) {
+function SideCards({ players, player, healthEl, tryGuess }) {
+	// TODO improve this code (healthEl is front limited, is just the healthEl of the user)
+	const [selectedPlayer, setSelectedPlayer] = useState(player);
+	let clues = selectedPlayer ? [...selectedPlayer.clues] : [];
+
+	useEffect(() => {
+		if (player) {
+			setSelectedPlayer(() => player);
+		}
+	}, [player, selectedPlayer]);
+
 	return (
 		<aside className="h-screen px-2 pt-12 pb-4 grid grid-rows-[54%_45%] gap-3 font-normal text-sm">
 			<div className="w-full h-full px-4 pt-12 pb-4 bg-zinc-950 rounded-lg shadow-lg relative -rotate-1">
@@ -11,12 +22,18 @@ function SideCards({ healthEl, tryGuess }) {
 					<Button className="w-12 h-12 p-0 bg-zinc-800 shadow-md rotate-0"><Contact color="#e4e4e7" /></Button>
 					<Button className="w-12 h-12 p-0 bg-zinc-800 shadow-md -rotate-6"><ArrowBigRight color="#e4e4e7" fill="#e4e4e7" /></Button>
 				</div>
-				<div className="h-full flex flex-col flex-grow">
-					<h2 className="mb-4 font-bold">Your Clues</h2>
+				<div className="h-full text-base flex flex-col flex-grow">
+					<h2 className="mb-4 text-xl font-bold">Your Clues</h2>
 					<ScrollArea className="flex flex-col gap-4">
-						<p className="text-zinc-400">I Am Not a real person</p>
-						<p className="text-zinc-400">I Am Not a cartoon character</p>
-						<p className="text-emerald-600">I Am a superhero</p>
+						{clues?.length > 0 ? (
+							clues.map((c, index) =>
+								<p key={`${selectedPlayer?.userId}-c${index}`} className={c.correctVotes > c.wrongVotes ? 'text-emerald-600' : 'text-zinc-400'}>
+									I am {c.description}
+								</p>
+							)
+						) : (
+							<p className="text-zinc-400">Wait for your turn and try a clue!</p>
+						)}
 					</ScrollArea>
 				</div>
 			</div>

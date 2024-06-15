@@ -45,6 +45,7 @@ const usePlayersContextSetup = () => {
         player.listen('talking', (value) => handlePropertyChange('talking', value));
         player.listen('userId', (value) => handlePropertyChange('userId', value));
 				player.listen('health', (value) => handlePropertyChange('health', value));
+				player.listen('clues', (value) => handlePropertyChange('clues', value));
 			});
 
 			authenticatedContext.room.state.players.onRemove((player) => {

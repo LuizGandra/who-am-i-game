@@ -3,6 +3,7 @@ import SideCards from '../SideCards/sideCards';
 import Queue from '../Queue/queue';
 import CurrentPlayer from '../CurrentPlayer/currentPlayer';
 import GameOverDialog from '../GameOverDialog/gameOverDialog';
+import VoteDialog from '../VoteDialog/voteDialog';
 import { usePlayers } from '../../hooks/usePlayers';
 import { useAuthenticatedContext } from '../../hooks/useAuthenticatedContext';
 import { Input } from "./../ui/input"
@@ -16,7 +17,7 @@ import getUserDisplayName from '../../utils/getUserDisplayName';
 function Game() {
 	// TODO:
 	// ! 1. Fix currentPlayer talk
-	// ! 2. Show timer in frontend
+	// ! 2. Guesses and clues
 
 	const authenticatedContext = useAuthenticatedContext();
 	const room = authenticatedContext.room;
@@ -34,13 +35,17 @@ function Game() {
 	const [currentPlayer, setCurrentPlayer] = useState(room.state.currentPlayer);
 
 	const [healthEl, setHealthEl] = useState([]);
-	const [showModal, setShowModal] = useState(false);
+	const [showGameOverModal, setShowGameOverModal] = useState(false);
+	const [showVoteModal, setShowVoteModal] = useState(false);
 
 	const round = room.state.round;
 	const lastRound = room.state.lastRound;
 	const roundTimer = room.state.roundTimer;
 
 	const [timeLeft, setTimeLeft] = useState(roundTimer);
+
+	const [votes, setVotes] = useState({ correctVotes: 0, wrongVotes: 0});
+	const [clueText, setClueText] = useState('');
 
 	useEffect(() => {
 		if (player) {
@@ -51,6 +56,11 @@ function Game() {
 			room.state.listen('roundTimer', (data) => {
 				setTimeLeft(() => data);
 			});
+
+			room.state.listen('showVote', (data) => {
+				console.log('executou:', data);
+				setShowVoteModal(data);
+			});
 		}
 	});
 
@@ -59,6 +69,39 @@ function Game() {
 			setHealthEl(getPlayerHealth(player.name, player.health));
 		}
 	}, [player]);
+
+	const handleVotes = (vote) => {
+		switch (vote) {
+			case 'correct':
+				setVotes(votes => {
+					const newVotes = votes;
+					newVotes.correctVotes++;
+
+					return newVotes;
+				});
+				break;
+			case 'wrong':
+				setVotes(votes => {
+					const newVotes = votes;
+					newVotes.wrongVotes++;
+
+					return newVotes;
+				});
+				break;
+			default:
+				break;
+		}
+
+		setClueText('');
+
+		// room.send('updateShowVote');
+	}
+
+	const checkClue = (clue) => {
+		console.log('foi chamado!');
+		room.send('updateShowVote');
+		room.send('addClue', { description: clue, correctVotes: votes.correctVotes, wrongVotes: votes.wrongVotes });
+	}
 	
 	const tryGuess = (guess) => {
 		if (!checkGuess(player?.name, guess)) {
@@ -78,7 +121,7 @@ function Game() {
 			}
 
 			if (!checkHealth(player?.health)) {
-				setShowModal(true);
+				setShowGameOverModal(true);
 				if (checkQueue(queue, player.sessionId)) {
 					room.send('moveToLobby', player.sessionId);
 				}
@@ -97,12 +140,18 @@ function Game() {
 						</div>
 						<div className="self-center flex flex-col gap-4 items-center">
 							<CurrentPlayer {...currentPlayer} />
-							<div className="h-16 -mt-16 flex">
-								<Input placeholder="Am I..." className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" />
-								<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl">
-									?
-								</Button>
-							</div>
+							{player?.sessionId === currentPlayer?.sessionId ? (
+								<div className="h-16 -mt-16 flex">
+									<Input placeholder="Am I..." value={clueText} className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" onChange={(e) => setClueText(e.target.value)} />
+									<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl" onClick={() => checkClue(clueText)}>
+										?
+									</Button>
+								</div>
+							) : (
+								<div className="w-64 h-16 -mt-16 px-4 bg-zinc-950 border-none rounded-lg text-xl text-center focus-visible:ring-offset-0 focus-visible:ring-0 flex justify-center items-center">
+									{currentPlayer?.name}
+								</div>
+							)}
 						</div>
 						<div className="flex flex-col gap-2 items-center">
 							<label className="text-sm uppercase text-zinc-600 font-bold">Timer</label>
@@ -111,9 +160,18 @@ function Game() {
 					</div>
 					<Queue queue={queue} />
 				</section>
-				<SideCards healthEl={healthEl} tryGuess={tryGuess} />
+				<SideCards players={players} player={player} healthEl={healthEl} tryGuess={tryGuess} />
 			</div>
-			<GameOverDialog showModal={showModal} setShowModal={setShowModal} />
+			<VoteDialog
+				showModal={showVoteModal}
+				setShowModal={() => room.send('updateShowVote')}
+				currentName={currentPlayer?.name}
+				sessionId={player?.sessionId}
+				queue={queue}
+				handleVotes={handleVotes}
+				question={clueText}
+			/>
+			<GameOverDialog showModal={showGameOverModal} setShowModal={setShowGameOverModal} />
 		</main>
 	);
 }
