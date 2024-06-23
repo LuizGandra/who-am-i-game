@@ -28,18 +28,22 @@ function VoteDialog({ showModal, setShowModal, currentPlayer, player, queue, han
 							})}
 							{Array.from(queue?.lobby)?.map(([key, p]) => <div key={key}><Player {...p} /></div>)}
 						</div>
-						<div className="flex justify-center items-center gap-8">
-							<Button className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center hover:bg-emerald-400" disabled={player?.voteStatus?.isActive} onClick={() => {
-								handleVotes(true);
-							}}>
-								<Check size={48} strokeWidth={3} />
-							</Button>
-							<Button className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-400" disabled={player?.voteStatus?.isActive} onClick={() => {
-								handleVotes(false);
-							}}>
-								<X size={48} strokeWidth={3} />
-							</Button>
-						</div>
+						{player?.sessionId !== currentPlayer?.sessionId ? (
+							<div className="flex justify-center items-center gap-8">
+								<Button className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center hover:bg-emerald-400" disabled={player?.voteStatus?.isActive} onClick={() => {
+									handleVotes(true);
+								}}>
+									<Check size={48} strokeWidth={3} />
+								</Button>
+								<Button className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-400" disabled={player?.voteStatus?.isActive} onClick={() => {
+									handleVotes(false);
+								}}>
+									<X size={48} strokeWidth={3} />
+								</Button>
+							</div>
+						) : (
+							undefined
+						)}
 					</>
 				) : (
 					<p className="w-full text-center text-zinc-600 text-3xl font-bold">Waiting players...</p>

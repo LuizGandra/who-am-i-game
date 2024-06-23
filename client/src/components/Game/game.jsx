@@ -45,9 +45,8 @@ function Game() {
 	const [clueText, setClueText] = useState('');
 	const currentQuestion = useRef(clueText);
 
-	// ! DO NEXT!!!!
-	// TODO NEXT: count the votes
-	// TODO CURRENT PLAYER CAN'T VOTE
+	// TODO NEXT
+	// ! Implement Guesses
 
 	useEffect(() => {
 		if (player) {

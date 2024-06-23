@@ -9,3 +9,4 @@
 ## TODO - Future Improvements
 
 - Fix the refresh of the clues list
+- Improve the useEffect of player's listeners in usePlayers

@@ -1,6 +1,6 @@
 import { ScrollArea } from "../ui/scroll-area"
 import { Button } from "../ui/button"
-import { ArrowBigLeft, ArrowBigRight, Contact } from 'lucide-react';
+import { ArrowBigLeft, ArrowBigRight, Check, Contact, X } from 'lucide-react';
 import { useEffect, useState } from "react";
 
 function SideCards({ players, userId, healthEl, tryGuess }) {
@@ -28,11 +28,12 @@ function SideCards({ players, userId, healthEl, tryGuess }) {
 				<div className="h-full text-base flex flex-col flex-grow">
 					<h2 className="mb-4 text-xl font-bold">Your Clues</h2>
 					<ScrollArea className="flex flex-col gap-4">
-						{selectedPlayer?.clues?.size > 0 ? (
+						{selectedPlayer?.clues?.length > 0 ? (
 							Array.from(selectedPlayer?.clues)?.map((c, index) =>
-								<p key={`${selectedPlayer?.userId}-c${index}`} className={c.correctVotes > c.wrongVotes ? 'text-emerald-600' : 'text-zinc-400'}>
-									I am {c.description}
-								</p>
+								<div key={`${selectedPlayer?.userId}-c${index}`} className={`mb-4 flex flex-col gap-2`}>
+									<span className={c.correctVotes > c.wrongVotes ? 'text-emerald-600' : c.correctVotes < c.wrongVotes ? 'text-red-400' : 'text-zinc-400'}>I am {c.description}</span>
+									<span className="w-fit bg-zinc-900 px-2 rounded-md text-sm flex items-center gap-2">{c.correctVotes} <Check size={16} /> {c.wrongVotes} <X size={16} /></span>
+								</div>
 							)
 						) : (
 							<p className="text-zinc-400">Wait for your turn and try a clue!</p>

@@ -1,7 +1,7 @@
 import * as schema from "@colyseus/schema";
 import { Player } from './player.js';
 import { Queue } from './queue.js';
-import { Clue } from './clue.js';
+import { CardItem } from './cardItem.js';
 import { Vote } from './vote.js';
 
 export class State extends schema.Schema {
@@ -186,10 +186,9 @@ export class State extends schema.Schema {
 			});
 
 			const newClues = [...player.clues];
-			newClues.push(new Clue({ description: this.currentQuestion, wrongVotes, correctVotes }));
+			newClues.push(new CardItem({ description: this.currentQuestion, wrongVotes, correctVotes }));
 
 			player.clues = newClues;
-			console.log(player.name, ' CLUES LENGTH:', player.clues.length);
 		}
 	}
 
@@ -219,7 +218,9 @@ export class State extends schema.Schema {
 			player.voteStatus = new Vote({ isActive: true, vote });
 
 			this.players.forEach(p => {
-				if (!p.voteStatus.isActive) finishVote = false;
+				if (p.sessionId !== this.currentPlayer.sessionId && !p.voteStatus.isActive) {
+					finishVote = false;
+				}
 			});
 
 			if (finishVote) {

@@ -1,6 +1,6 @@
 import * as schema from "@colyseus/schema";
 
-export class Clue extends schema.Schema {
+export class CardItem extends schema.Schema {
   constructor({ description = '', correctVotes = 0, wrongVotes = 0 }) {
 			super();
 			
@@ -10,7 +10,7 @@ export class Clue extends schema.Schema {
 	}
 }
 
-schema.defineTypes(Clue, {
+schema.defineTypes(CardItem, {
 	description: 'string',
 	correctVotes: 'number',
 	wrongVotes: 'number'
