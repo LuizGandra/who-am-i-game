@@ -29,11 +29,12 @@ const usePlayersContextSetup = () => {
 				setPlayers(players => [...players.filter(p => p.userId !== player.userId), player]);
 				
 				const handlePropertyChange = (field, value) => {
+					console.log('CLUES rodou :x', field);
 					setPlayers(players => players.map(p => {
 						if (p.userId !== player.userId) return p;
 						
 						p[field] = value;
-						
+						if (field === 'clues') console.log('CLUES:', Array.from(p.clues), 'CLUE VALUE:', value);
 						return p;
 					}));
 				}
@@ -46,6 +47,7 @@ const usePlayersContextSetup = () => {
         player.listen('userId', (value) => handlePropertyChange('userId', value));
 				player.listen('health', (value) => handlePropertyChange('health', value));
 				player.listen('clues', (value) => handlePropertyChange('clues', value));
+				player.listen('voteStatus', (value) => handlePropertyChange('voteStatus', value));
 			});
 
 			authenticatedContext.room.state.players.onRemove((player) => {

@@ -2,6 +2,7 @@ import * as schema from "@colyseus/schema";
 import { Player } from './player.js';
 import { Queue } from './queue.js';
 import { Clue } from './clue.js';
+import { Vote } from './vote.js';
 
 export class State extends schema.Schema {
 	constructor(attributes) {
@@ -13,6 +14,9 @@ export class State extends schema.Schema {
 		this.lastRound = 20;
 		this.roundDuration = 10;
 		this.roundTimer = this.roundDuration;
+		this.voteDuration = 10;
+		this.voteTimer = this.voteDuration;
+		this.currentQuestion = '';
 		this.showVote = false;
     this.roomName = attributes.roomName;
     this.channelId = attributes.channelId;
@@ -113,18 +117,19 @@ export class State extends schema.Schema {
 	}
 
 	// queue's methods
-	enqueue = (sessionId) => {
-		const player = this.getPlayer(sessionId);
+	// TODO will be used?
+	// enqueue = (sessionId) => {
+	// 	const player = this.getPlayer(sessionId);
 
-		if (player) {
-			const isAlive = this.checkHealth(sessionId);
-			const isQueued = this.findInQueue(sessionId);
+	// 	if (player) {
+	// 		const isAlive = this.checkHealth(sessionId);
+	// 		const isQueued = this.findInQueue(sessionId);
 			
-			if (!isQueued && isAlive) {
-				this.queue.players.set(player.userId, player);
-			}
-		}
-	}
+	// 		if (!isQueued && isAlive) {
+	// 			this.queue.players.set(player.userId, player);
+	// 		}
+	// 	}
+	// }
 
 	moveToLobby = (sessionId) => {
 		const player = this.getPlayer(sessionId);
@@ -161,28 +166,65 @@ export class State extends schema.Schema {
 		}
 	}
 
-	updateTimer = () => {
-		if (this.roundTimer === 0) {
-			this.roundTimer = this.roundDuration;
+	updateTimer = (timerType) => {
+		if (this[`${timerType}Timer`] === 0) {
+			this[`${timerType}Timer`] = this[`${timerType}Duration`];
 		} else {
-			this.roundTimer--;
+			this[`${timerType}Timer`]--;
 		}
 	}
 
 	// clues and guesses
-	addClue = (sessionId, clue) => {
+	addClue = (sessionId) => {
 		const player = this.getPlayer(sessionId);
-
+		
 		if (player) {
-			player.clues.push(new Clue(clue));
+			let wrongVotes = 0, correctVotes = 0;
+			
+			this.players.forEach(p => {
+				p.voteStatus.isActive ? p.voteStatus.vote ? correctVotes++ : wrongVotes++ : undefined;
+			});
+
+			const newClues = [...player.clues];
+			newClues.push(new Clue({ description: this.currentQuestion, wrongVotes, correctVotes }));
+
+			player.clues = newClues;
+			console.log(player.name, ' CLUES LENGTH:', player.clues.length);
 		}
 	}
 
-	updateShowVote = (sessionId) => {
+	updateShowVote = (sessionId, question) => {
+		let delay = 0;
+		if (this.showVote) {
+			this.addClue(this.currentPlayer.sessionId);
+			
+			delay = 1000;
+		}
+		
+		this.currentQuestion = question;
+		this.showVote = !this.showVote;
+		this.players.forEach(p => p.voteStatus.isActive = false);
+		
+		setTimeout(() => {
+			this.voteTimer = this.voteDuration;
+		}, delay);
+	}
+
+	updatePlayerVote = (sessionId, vote) => {
 		const player = this.getPlayer(sessionId);
 
 		if (player) {
-			this.showVote = !this.showVote;
+			let finishVote = true;
+
+			player.voteStatus = new Vote({ isActive: true, vote });
+
+			this.players.forEach(p => {
+				if (!p.voteStatus.isActive) finishVote = false;
+			});
+
+			if (finishVote) {
+				this.updateShowVote({}, '');
+			}
 		}
 	}
 }
@@ -193,8 +235,11 @@ schema.defineTypes(State, {
 	queue: Queue,
 	round: 'number',
 	lastRound: 'number',
-	roundTimer: 'number',
 	roundDuration: 'number',
+	roundTimer: 'number',
+	voteDuration: 'number',
+	voteTimer: 'number',
+	currentQuestion: 'string',
 	showVote: 'boolean',
 	roomName: 'string',
 	channelId: 'string'

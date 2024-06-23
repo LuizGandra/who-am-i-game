@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SideCards from '../SideCards/sideCards';
 import Queue from '../Queue/queue';
 import CurrentPlayer from '../CurrentPlayer/currentPlayer';
@@ -15,10 +15,6 @@ import checkQueue from './../../utils/checkQueue';
 import getUserDisplayName from '../../utils/getUserDisplayName';
 
 function Game() {
-	// TODO:
-	// ! 1. Fix currentPlayer talk
-	// ! 2. Guesses and clues
-
 	const authenticatedContext = useAuthenticatedContext();
 	const room = authenticatedContext.room;
 
@@ -29,23 +25,29 @@ function Game() {
 	});
 
 	const players = usePlayers();
-	const player = players.filter(p => name === p.name)[0];
 	let queue = room.state.queue;
+	const player = players.filter(p => name === p.name)[0];
 
 	const [currentPlayer, setCurrentPlayer] = useState(room.state.currentPlayer);
 
 	const [healthEl, setHealthEl] = useState([]);
 	const [showGameOverModal, setShowGameOverModal] = useState(false);
 	const [showVoteModal, setShowVoteModal] = useState(false);
-
+	
 	const round = room.state.round;
 	const lastRound = room.state.lastRound;
 	const roundTimer = room.state.roundTimer;
-
-	const [timeLeft, setTimeLeft] = useState(roundTimer);
-
-	const [votes, setVotes] = useState({ correctVotes: 0, wrongVotes: 0});
+	const voteTimer = room.state.voteTimer;
+	
+	const [roundTimeLeft, setRoundTimeLeft] = useState(roundTimer);
+	const [voteTimeLeft, setVoteTimeLeft] = useState(voteTimer);
+	
 	const [clueText, setClueText] = useState('');
+	const currentQuestion = useRef(clueText);
+
+	// ! DO NEXT!!!!
+	// TODO NEXT: count the votes
+	// TODO CURRENT PLAYER CAN'T VOTE
 
 	useEffect(() => {
 		if (player) {
@@ -54,12 +56,19 @@ function Game() {
 			});
 
 			room.state.listen('roundTimer', (data) => {
-				setTimeLeft(() => data);
+				setRoundTimeLeft(() => data);
+			});
+
+			room.state.listen('voteTimer', (data) => {
+				setVoteTimeLeft(() => data);
 			});
 
 			room.state.listen('showVote', (data) => {
-				console.log('executou:', data);
 				setShowVoteModal(data);
+			});
+
+			room.state.listen('currentQuestion', (data) => {
+				currentQuestion.current = data;
 			});
 		}
 	});
@@ -71,36 +80,14 @@ function Game() {
 	}, [player]);
 
 	const handleVotes = (vote) => {
-		switch (vote) {
-			case 'correct':
-				setVotes(votes => {
-					const newVotes = votes;
-					newVotes.correctVotes++;
-
-					return newVotes;
-				});
-				break;
-			case 'wrong':
-				setVotes(votes => {
-					const newVotes = votes;
-					newVotes.wrongVotes++;
-
-					return newVotes;
-				});
-				break;
-			default:
-				break;
-		}
-
-		setClueText('');
-
-		// room.send('updateShowVote');
+		room.send('updatePlayerVote', vote);
 	}
 
-	const checkClue = (clue) => {
-		console.log('foi chamado!');
-		room.send('updateShowVote');
-		room.send('addClue', { description: clue, correctVotes: votes.correctVotes, wrongVotes: votes.wrongVotes });
+	const checkClue = () => {
+		if (clueText.length > 0) {
+			room.send('updateShowVote', clueText);
+			setClueText('');
+		}
 	}
 	
 	const tryGuess = (guess) => {
@@ -143,7 +130,7 @@ function Game() {
 							{player?.sessionId === currentPlayer?.sessionId ? (
 								<div className="h-16 -mt-16 flex">
 									<Input placeholder="Am I..." value={clueText} className="w-64 h-full px-4 bg-zinc-950 border-none rounded-lg rounded-r-none text-md focus-visible:ring-offset-0 focus-visible:ring-0" onChange={(e) => setClueText(e.target.value)} />
-									<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl" onClick={() => checkClue(clueText)}>
+									<Button className="w-24 h-full bg-zinc-950 rounded-l-none text-xl" onClick={checkClue}>
 										?
 									</Button>
 								</div>
@@ -155,21 +142,22 @@ function Game() {
 						</div>
 						<div className="flex flex-col gap-2 items-center">
 							<label className="text-sm uppercase text-zinc-600 font-bold">Timer</label>
-							<span className="text-3xl">{timeLeft}</span>
+							<span className="text-3xl">{roundTimeLeft}</span>
 						</div>
 					</div>
 					<Queue queue={queue} />
 				</section>
-				<SideCards players={players} player={player} healthEl={healthEl} tryGuess={tryGuess} />
+				<SideCards players={players} userId={player?.userId} healthEl={healthEl} tryGuess={tryGuess} />
 			</div>
 			<VoteDialog
 				showModal={showVoteModal}
-				setShowModal={() => room.send('updateShowVote')}
-				currentName={currentPlayer?.name}
-				sessionId={player?.sessionId}
+				setShowModal={() => ''}
+				currentPlayer={currentPlayer}
+				player={player}
 				queue={queue}
 				handleVotes={handleVotes}
-				question={clueText}
+				question={currentQuestion.current}
+				voteTimer={voteTimeLeft}
 			/>
 			<GameOverDialog showModal={showGameOverModal} setShowModal={setShowGameOverModal} />
 		</main>

@@ -3,16 +3,19 @@ import { Button } from "../ui/button"
 import { ArrowBigLeft, ArrowBigRight, Contact } from 'lucide-react';
 import { useEffect, useState } from "react";
 
-function SideCards({ players, player, healthEl, tryGuess }) {
+function SideCards({ players, userId, healthEl, tryGuess }) {
 	// TODO improve this code (healthEl is front limited, is just the healthEl of the user)
-	const [selectedPlayer, setSelectedPlayer] = useState(player);
-	let clues = selectedPlayer ? [...selectedPlayer.clues] : [];
+	const [selectedPlayer, setSelectedPlayer] = useState();
 
 	useEffect(() => {
-		if (player) {
-			setSelectedPlayer(() => player);
+		if (!selectedPlayer) {
+			for (const player of players) {
+				if (player.userId === userId) {
+					setSelectedPlayer(player);
+				}
+			}
 		}
-	}, [player, selectedPlayer]);
+	}, [players, userId]);
 
 	return (
 		<aside className="h-screen px-2 pt-12 pb-4 grid grid-rows-[54%_45%] gap-3 font-normal text-sm">
@@ -25,8 +28,8 @@ function SideCards({ players, player, healthEl, tryGuess }) {
 				<div className="h-full text-base flex flex-col flex-grow">
 					<h2 className="mb-4 text-xl font-bold">Your Clues</h2>
 					<ScrollArea className="flex flex-col gap-4">
-						{clues?.length > 0 ? (
-							clues.map((c, index) =>
+						{selectedPlayer?.clues?.size > 0 ? (
+							Array.from(selectedPlayer?.clues)?.map((c, index) =>
 								<p key={`${selectedPlayer?.userId}-c${index}`} className={c.correctVotes > c.wrongVotes ? 'text-emerald-600' : 'text-zinc-400'}>
 									I am {c.description}
 								</p>

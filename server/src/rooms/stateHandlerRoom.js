@@ -1,26 +1,37 @@
 import colyseus from 'colyseus';
 import { State } from '../entities/state.js';
 
-const { Room, Delayed } = colyseus;
+const { Room } = colyseus;
 
 export class StateHandlerRoom extends Room {
 	maxClients = 10;
 	roundTimerInterval;
+	voteTimerInterval;
 
 	onCreate(options) {
 		this.setState(new State(options));
 
 		// TODO: create onStart method
-		// round timer
 		this.clock.start();
-
+		
 		// TODO improve this interval for zero delay
 		this.roundTimerInterval = this.clock.setInterval(() => {
 			if (this.state.roundTimer === 0) this.state.updateCurrentPlayer();
-				
-			this.state.updateTimer();
+			
+			this.state.updateTimer('round');
+		}, 1000);
+		
+		this.voteTimerInterval = this.clock.setInterval(() => {
+			if (this.state.voteTimer === 0) {
+				this.state.updateShowVote({}, '');
+			} else {
+				this.state.updateTimer('vote');
+			}
 		}, 1000);
 
+		this.voteTimerInterval.pause();
+		
+		this.setSimulationInterval(() => this.update());
 
 		// player's handlers
 		this.onMessage('removeHealth', (client) => {
@@ -44,22 +55,24 @@ export class StateHandlerRoom extends Room {
 			this.state.moveToLobby(client.sessionId);
 		});
 
-		this.onMessage('updateCurrentPlayer', () => {
-			this.state.updateCurrentPlayer();
-		});
-
-		this.onMessage('updateTimer', () => {
-			this.state.updateTimer();
-		});
-
 		// clues and guesses handlers
-		this.onMessage('addClue', (client, clue) => {
-			this.state.addClue(client.sessionId, clue);
+		this.onMessage('updateShowVote', (client, question) => {
+			this.state.updateShowVote(client.sessionId, question);
 		});
 
-		this.onMessage('updateShowVote', (client) => {
-			this.state.updateShowVote(client.sessionId);
+		this.onMessage('updatePlayerVote', (client, vote) => {
+			this.state.updatePlayerVote(client.sessionId, vote);
 		});
+	}
+
+	update() {
+		if (this.state.showVote) {
+			this.roundTimerInterval.pause();
+			this.voteTimerInterval.resume();
+		} else {
+			this.voteTimerInterval.active && this.voteTimerInterval.pause();
+			this.voteTimerInterval.paused && this.roundTimerInterval.resume();
+		}
 	}
 
 	onAuth(_client, _options, _req) {
